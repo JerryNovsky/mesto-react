@@ -47,7 +47,7 @@ export class Api {
             },
             body: JSON.stringify({
                 name: input.name,
-                about: input.job,
+                about: input.about,
             })
         })
             .then(res =>
@@ -62,13 +62,38 @@ export class Api {
                 authorization: this._authorization,
                 'Content-Type': this._contentType
             },
-            body: JSON.stringify({
-                avatar: input,
-            })
+            body: JSON.stringify(input)
         })
             .then(res =>
                 this._checkServerResponse(res));
     };
+
+    changeLikeCardStatus(cardId, isLiked) {
+        if (isLiked) {
+            return fetch(`${this._url}/cards/likes/${cardId}`, {
+                method: 'DELETE',
+                headers: {
+                    authorization: this._authorization,
+                    'Content-Type': this._contentType
+                }
+            })
+                .then(res =>
+                    this._checkServerResponse(res));
+        }
+
+        else {
+            return fetch(`${this._url}/cards/likes/${cardId}`, {
+                method: 'PUT',
+                headers: {
+                    authorization: this._authorization,
+                    'Content-Type': this._contentType
+                }
+            })
+                .then(res =>
+                    this._checkServerResponse(res));
+        }
+    }
+
 
     //Поставить лайк
     putLike(cardId) {
@@ -103,10 +128,7 @@ export class Api {
                 authorization: this._authorization,
                 'Content-Type': this._contentType
             },
-            body: JSON.stringify({
-                name: input.name,
-                link: input.link,
-            })
+            body: JSON.stringify(input)
         })
             .then(res =>
                 this._checkServerResponse(res));

@@ -4,6 +4,13 @@ import Main from './Main';
 import Footer from './Footer';
 import PopupWithForm from './PopupWithForm';
 import ImagePopup from "./ImagePopup";
+import PopupWithEditProfile from "./PopupWithEditProfile";
+import { useEffect } from "react";
+import { reactApi } from "../utils/Api";
+import { CurrentUserContext, startUserData } from '../contexts/CurrentUserContext'
+import { CardContext } from "../contexts/CardContext";
+import PopupWithEditAvatar from "./PopupWithEditAvatar";
+import PopupWithAddPlace from "./PopupWithAddPlace";
 
 function App() {
 
@@ -11,6 +18,28 @@ function App() {
   const [isAddPlacePopupOpen, setIsAddPlacePopupOpen] = React.useState(false);
   const [isEditAvatarPopupOpen, setIsEditAvatarPopupOpen] = React.useState(false);
   const [selectedCard, setSelectedCard] = React.useState({})
+  const [currentUser, setCurrentUser] = React.useState(startUserData);
+  const [cards, setCards] = React.useState([]);
+
+  useEffect(() => {
+    reactApi.getUserData()
+        .then((data) => {
+            setCurrentUser(data);
+        })
+        .catch((error) => {
+            console.log(error);
+        })
+}, []);
+
+  useEffect(() => {
+    reactApi.getAllCards()
+        .then((data) => {
+            setCards(data);
+        })
+        .catch((error) => {
+            console.log(error)
+        })
+  }, []);
 
   function handleEditProfileClick() {
     setIsEditProfilePopupOpen(true);
@@ -31,6 +60,29 @@ function App() {
     setSelectedCard({});
   }
 
+  function handleCardLike(card) {
+    const isLiked = card.likes.some(i => i._id === currentUser._id);
+    
+    reactApi.changeLikeCardStatus(card._id, isLiked)
+      .then((newCard) => {
+        setCards((state) => state.map((c) => c._id === card._id ? newCard : c));
+    })
+      .catch((error) => {
+        console.log(error)
+    })
+  }
+
+  function handleCardDelete(card) {
+    reactApi.deleteCard(card._id)
+      .then((res) => {
+        setCards((arr) => arr.filter((c) => c._id !== card._id))
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
+
+
   const handleCardClick = (card) => {
     setSelectedCard({
       name: card.name,
@@ -38,8 +90,43 @@ function App() {
     })
   }
 
+  function handleUpdateUser(data) {
+    reactApi.setUserData(data)
+    .then((res) => {
+      setCurrentUser(res);
+      closeAllPopups();
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+  }
+
+  function handleUpdateAvatar(data) {
+    reactApi.changeUserAvatar(data)
+    .then((res) => {
+      setCurrentUser(res);
+      closeAllPopups();
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+  }
+
+  function handleAddPlaceSubmit(input) {
+    reactApi.addNewCard(input)
+    .then((newCard) => {
+      setCards([newCard, ...cards]);
+      closeAllPopups()
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+  }
+
   return (
 
+    <CurrentUserContext.Provider value={currentUser}>
+    <CardContext.Provider value={cards}>
     <div className="page">
 
       <Header />
@@ -48,82 +135,27 @@ function App() {
         onEditProfile={handleEditProfileClick}
         onAddPlace={handleAddPlaceClick}
         onEditAvatar={handleEditAvatarClick}
-        onCardClick={handleCardClick} />
+        onCardClick={handleCardClick}
+        onCardLike={handleCardLike}
+        onCardDelete={handleCardDelete}
+        cards={cards} />
 
       <Footer />
 
-      <PopupWithForm
-        name="edit-profile"
-        title="Изменить данные профиля"
-        isOpen={isEditProfilePopupOpen}
-        onClose={closeAllPopups}>
+      <PopupWithEditProfile 
+      isOpen={isEditProfilePopupOpen} 
+      onClose={closeAllPopups} 
+      onUpdateUser={handleUpdateUser} />
 
-        <input
-          type="text"
-          id="name-input"
-          className="popup__input popup__input_type_name"
-          name="name"
-          placeholder="Введите свое имя"
-          minLength="2"
-          maxLength="40"
-          required />
-        <span className="name-input-error popup__input-error"></span>
-        <input
-          type="text"
-          id="job-input"
-          className="popup__input popup__input_type_description"
-          name="job"
-          placeholder="Чем вы занимаетесь?"
-          minLength="2"
-          maxLength="200"
-          required />
-        <span className="job-input-error popup__input-error"></span>
+      <PopupWithAddPlace
+      isOpen={isAddPlacePopupOpen}
+      onClose={closeAllPopups}
+      onUpdateNewCard={handleAddPlaceSubmit} />
 
-      </PopupWithForm>
-
-      <PopupWithForm
-        name="add-card"
-        title="Добавить новое место"
-        isOpen={isAddPlacePopupOpen}
-        onClose={closeAllPopups}>
-
-        <input
-          type="text"
-          id="card-name-input"
-          className="popup__input popup__input_type_card-name"
-          name="name"
-          placeholder="Название"
-          minLength="2"
-          maxLength="30"
-          required />
-        <span className="card-name-input-error popup__input-error"></span>
-        <input
-          type="url"
-          id="url-input"
-          className="popup__input popup__input_type_card-link"
-          name="link"
-          placeholder="Ссылка на картинку"
-          required />
-        <span className="url-input-error popup__input-error"></span>
-
-      </PopupWithForm>
-
-      <PopupWithForm
-        name="edit-avatar"
-        title="Изменить аватар"
-        isOpen={isEditAvatarPopupOpen}
-        onClose={closeAllPopups}>
-
-        <input
-          type="url"
-          id="avatar-input"
-          className="popup__input popup__input_type_avatar-link"
-          name="avatar-link"
-          placeholder="Ссылка на картинку"
-          required />
-        <span className="avatar-input-error popup__input-error"></span>
-
-      </PopupWithForm>
+      <PopupWithEditAvatar 
+      isOpen={isEditAvatarPopupOpen} 
+      onClose={closeAllPopups}
+      onUpdateAvatar={handleUpdateAvatar} /> 
 
       <PopupWithForm
         name="delete-card-confirmation"
@@ -135,7 +167,8 @@ function App() {
       />
       
     </div>
-
+    </CardContext.Provider>
+    </CurrentUserContext.Provider>
   );
 }
 
