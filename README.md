@@ -4,7 +4,7 @@
 
 ## Ссылка на проект
 
-* [Mesto](https://jerrynovsky.github.io/mesto/)
+* [Mesto](https://jerrynovsky.github.io/mesto-react/)
 
 ## Описание проекта
 
